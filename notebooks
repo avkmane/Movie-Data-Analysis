@@ -195,7 +195,3 @@ plt.xlabel('Year')
 plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
 plt.show()
 
-### Summary ###
-# This script now includes additional analysis and visualizations to explore various aspects of the dataset. 
-# New sections include most rated movies, ratings distribution by genres, and temporal genre analysis.
-# Use this as a comprehensive tool for analyzing movie data and improving insights for your GitHub project.
