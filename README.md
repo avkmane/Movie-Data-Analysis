@@ -4,11 +4,8 @@
 Welcome to the **Movie Data Analysis Project**! This repository explores insights from a dataset of movies and user ratings, covering topics like rating distributions, genre trends, and user behavior. The project demonstrates data analysis, visualization, and clustering techniques, making it a perfect showcase for your data analysis and machine learning skills.
 
 ## 📂 Project Structure
-- **`data/`**: Contains the `movies.json` and `ratings.csv` datasets used in the analysis.
-- **`notebooks/`**: Includes Jupyter notebooks for step-by-step analysis.
-- **`src/`**: Modularized Python scripts (optional).
-- **`README.md`**: This document.
-- **`requirements.txt`**: Python dependencies for the project.
+- 'movies.json` and `ratings.csv` datasets used in the analysis.
+- notebooks: Includes Jupyter notebooks for step-by-step analysis.
 
 ## 🔍 Analysis Overview
 ### 1. Most Frequently Assigned Rating
