@@ -1,0 +1,201 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Load the datasets
+movies = pd.read_json('movies.json', lines=True)
+ratings = pd.read_csv('ratings.csv')
+
+# Ensure proper column merging
+ratings['movieId'] = ratings['movieId'].astype(str)
+movies['id'] = movies['id'].astype(str)
+merged = pd.merge(ratings, movies, left_on='movieId', right_on='id')
+
+### 1. Most Frequently Assigned Rating ###
+
+# Frequency of each rating
+rating_counts = ratings['rating'].value_counts()
+most_frequent_rating = rating_counts.idxmax()
+num_entries = rating_counts.max()
+
+print(f"Most frequently assigned rating: {most_frequent_rating} with {num_entries} entries.")
+
+# Visualization
+plt.figure(figsize=(8, 5))
+rating_counts.sort_index().plot(kind='bar', color='skyblue')
+plt.title('Frequency of Ratings')
+plt.xlabel('Rating')
+plt.ylabel('Frequency')
+plt.show()
+
+### 2. Average Rating by Genre ###
+
+# Explode genres to handle movies with multiple genres
+genre_data = merged.explode('genres')
+
+# Group by genre and calculate mean rating
+genre_ratings = genre_data.groupby('genres')['rating'].mean().sort_values(ascending=False)
+print(genre_ratings)
+
+# Visualization
+genre_ratings.plot(kind='bar', figsize=(10, 6), color='coral')
+plt.title('Average Ratings by Genre')
+plt.ylabel('Average Rating')
+plt.xlabel('Genre')
+plt.show()
+
+### 3. Temporal Analysis of Ratings ###
+
+# Convert timestamp to datetime
+ratings['timestamp'] = pd.to_datetime(ratings['timestamp'], unit='s')
+ratings['year'] = ratings['timestamp'].dt.year
+
+# Ratings over time
+yearly_ratings = ratings.groupby('year')['rating'].mean()
+
+print(yearly_ratings)
+
+# Visualization
+yearly_ratings.plot(kind='line', figsize=(10, 6), marker='o', color='green')
+plt.title('Average Ratings Over Time')
+plt.ylabel('Average Rating')
+plt.xlabel('Year')
+plt.show()
+
+### 4. Top 5 Movies with Highest Average Ratings ###
+
+# Filter for movies with at least 50 ratings
+movie_ratings = merged.groupby('movieId').agg({
+    'rating': ['mean', 'count'],
+    'title': 'first'
+})
+movie_ratings.columns = ['average_rating', 'num_ratings', 'title']
+top_movies = movie_ratings[movie_ratings['num_ratings'] >= 50].sort_values('average_rating', ascending=False).head(5)
+
+print(top_movies[['title', 'average_rating', 'num_ratings']])
+
+# Visualization
+top_movies.plot(kind='bar', x='title', y='average_rating', color='purple', legend=False, figsize=(10, 6))
+plt.title('Top 5 Movies with Highest Average Ratings')
+plt.ylabel('Average Rating')
+plt.xlabel('Movie Title')
+plt.xticks(rotation=45)
+plt.show()
+
+### 5. Ratings by Language ###
+
+# Average rating by language
+language_ratings = merged.groupby('language')['rating'].mean().sort_values(ascending=False)
+print(language_ratings)
+
+# Visualization
+language_ratings.plot(kind='bar', figsize=(10, 6), color='orange')
+plt.title('Average Ratings by Language')
+plt.ylabel('Average Rating')
+plt.xlabel('Language')
+plt.show()
+
+### 6. User Behavior Analysis ###
+
+# Average ratings by user
+user_ratings = ratings.groupby('userId').agg({
+    'rating': ['mean', 'count']
+})
+user_ratings.columns = ['average_rating', 'num_ratings']
+
+# User segmentation based on number of ratings
+user_ratings['rating_category'] = pd.cut(user_ratings['num_ratings'], bins=[0, 10, 50, 100, 500],
+                                         labels=['Casual', 'Occasional', 'Frequent', 'Avid'])
+print(user_ratings.head())
+
+# Visualization
+sns.countplot(x='rating_category', data=user_ratings, palette='pastel')
+plt.title('User Segmentation by Rating Frequency')
+plt.xlabel('User Category')
+plt.ylabel('Number of Users')
+plt.show()
+
+### 7. Genre Popularity by Year ###
+
+# Extract release year from release date
+movies['release_year'] = pd.to_datetime(movies['releasedate']).dt.year
+release_genre_data = movies.explode('genres')
+
+genre_popularity = release_genre_data.groupby(['release_year', 'genres']).size().unstack().fillna(0)
+genre_popularity.plot(kind='area', stacked=True, figsize=(15, 8), colormap='viridis')
+plt.title('Genre Popularity Over Time')
+plt.ylabel('Number of Movies')
+plt.xlabel('Year')
+plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+plt.show()
+
+### 8. Clustering Users by Rating Behavior ###
+
+# Prepare user-movie rating matrix
+user_movie_matrix = merged.pivot_table(index='userId', columns='movieId', values='rating').fillna(0)
+
+# Scale data
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(user_movie_matrix)
+
+# Apply KMeans clustering
+kmeans = KMeans(n_clusters=4, random_state=42)
+kmeans.fit(scaled_data)
+user_movie_matrix['cluster'] = kmeans.labels_
+
+print(user_movie_matrix['cluster'].value_counts())
+
+# Visualization of cluster sizes
+user_movie_matrix['cluster'].value_counts().plot(kind='bar', color='teal', figsize=(8, 5))
+plt.title('Cluster Sizes of Users Based on Rating Patterns')
+plt.xlabel('Cluster')
+plt.ylabel('Number of Users')
+plt.show()
+
+### 9. Most Rated Movies ###
+
+# Movies with the most number of ratings
+most_rated_movies = merged.groupby('title').size().sort_values(ascending=False).head(10)
+print(most_rated_movies)
+
+# Visualization
+most_rated_movies.plot(kind='bar', figsize=(10, 6), color='gold')
+plt.title('Top 10 Most Rated Movies')
+plt.ylabel('Number of Ratings')
+plt.xlabel('Movie Title')
+plt.xticks(rotation=45)
+plt.show()
+
+### 10. Ratings Distribution by Genres ###
+
+# Ratings distribution for each genre
+genre_rating_dist = genre_data.groupby('genres')['rating'].value_counts(normalize=True).unstack().fillna(0)
+
+# Heatmap of ratings distribution
+plt.figure(figsize=(12, 8))
+sns.heatmap(genre_rating_dist, cmap='coolwarm', annot=False, cbar=True)
+plt.title('Ratings Distribution Across Genres')
+plt.xlabel('Rating')
+plt.ylabel('Genre')
+plt.show()
+
+### 11. Temporal Analysis of Genre Popularity ###
+
+# Group by release year and genres
+genre_trends = release_genre_data.groupby(['release_year', 'genres']).size().unstack().fillna(0)
+
+# Visualization of genre trends
+genre_trends.plot(figsize=(15, 10), colormap='tab20', linewidth=2)
+plt.title('Trends of Genre Popularity Over Time')
+plt.ylabel('Number of Movies')
+plt.xlabel('Year')
+plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+plt.show()
+
+### Summary ###
+# This script now includes additional analysis and visualizations to explore various aspects of the dataset. 
+# New sections include most rated movies, ratings distribution by genres, and temporal genre analysis.
+# Use this as a comprehensive tool for analyzing movie data and improving insights for your GitHub project.
