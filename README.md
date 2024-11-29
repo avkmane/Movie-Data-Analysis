@@ -52,8 +52,3 @@ Welcome to the **Movie Data Analysis Project**! This repository explores insight
 - Explored the evolution of genre popularity over the years.
 - **Visualization**: Line plot of genre trends.
 
-## 🚀 Getting Started
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/your-username/Movie-Data-Analysis.git
-   cd Movie-Data-Analysis
